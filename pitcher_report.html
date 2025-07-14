@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pitcher Performance Analysis - Fixed</title>
 
-  <!-- External Libraries -->
+  <!--External Libraries-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -333,7 +333,7 @@
   const pitchColors = {
     'FF': '#dc2626',  // FF - Red
     'SL': '#16a34a',  // SL - Green
-    'CH': '#ca8a04',  // CH - Yellow/Gold
+    'CH': '#ca8a04',  // CH - Yellow
     'CU': '#0ea5e9',  // CU - Blue
     'FC': '#7c3aed',  // FC - Purple
     'SI': '#f97316',  // SI - Orange
@@ -411,12 +411,12 @@
     const dates = [...new Set(pitchData.map(row => row.date))].sort();
     const dateRange = dates.length > 1 ? `${dates[0]} - ${dates[dates.length-1]}` : dates[0];
 
-    // Update header
+    // update header
     document.getElementById('pitcherName').textContent = pitcherName;
     document.getElementById('pitcherDate').textContent = dateRange;
     document.getElementById('pitcherAvatar').textContent = pitcherName.charAt(0).toUpperCase();
 
-    // Calculate overall stats
+    // calculate overall stats
     const totalPitches = pitchData.length;
     const appearances = new Set(pitchData.map(row => row.date)).size;
     const outs = pitchData.filter(row => row.result === 'Out' || row.result === 'Strikeout').length;
@@ -507,7 +507,7 @@
        ? (groundBalls / ballsInPlay.length * 100).toFixed(1)
        : '0.0';
 
-      // Batting Average vs RHB and LHB with hits defined
+      // batting Average vs lhb and rhb and hit definitions
       const hitsResults = ['1B', '2B', '3B', 'HR'];
       const rhbPitches = pitchesOfType.filter(row => row.batter_hand === 'R');
       const lhbPitches = pitchesOfType.filter(row => row.batter_hand === 'L');
@@ -518,7 +518,7 @@
       const uniqueRHBatters = new Set(rhbPitches.map(row => row.batter_number));
       const uniqueLHBatters = new Set(lhbPitches.map(row => row.batter_number));
 
-      // Calculate BA as hits divided by unique batters count, with fallback for zero
+      // calculate ba as hits divided by unique batters count, fallback to zero
       const rhbBA = uniqueRHBatters.size > 0 ? (rhbHits / uniqueRHBatters.size).toFixed(3) : '0.000';
       const lhbBA = uniqueLHBatters.size > 0 ? (lhbHits / uniqueLHBatters.size).toFixed(3) : '0.000';
 
@@ -547,7 +547,7 @@
   }
 
   function generateLocationChart(pitchData) {
-    // Reset all cells
+    // reset all cells
     const cells = document.querySelectorAll('.location-cell');
     cells.forEach(cell => {
       cell.textContent = '0';
@@ -618,13 +618,13 @@
 function generateResultChart(pitchData) {
   const ctx = document.getElementById('resultChart').getContext('2d');
 
-  // Unique pitch types sorted
+  // get unique pitch types  and sort
   const pitchTypes = [...new Set(pitchData.map(row => row.pitch_type))].sort();
 
-  // Define hits results for filtering hits
+  // defining hits results for filtering hits
   const hitsResults = ['1B', '2B', '3B', 'HR'];
 
-  // Count hits and outs per pitch type
+  // counts hits and outs per pitch type
   const hitsCounts = pitchTypes.map(pt =>
     pitchData.filter(row => row.pitch_type === pt && hitsResults.includes(row.result)).length
   );
@@ -645,14 +645,14 @@ function generateResultChart(pitchData) {
         {
           label: 'Outs',
           data: outsCounts,
-          backgroundColor: '#64748b', // gray-blue
+          backgroundColor: '#64748b',
           borderRadius: 4,
           borderSkipped: false,
         },
         {
           label: 'Hits',
           data: hitsCounts,
-          backgroundColor: '#22c55e', // green
+          backgroundColor: '#22c55e', 
           borderRadius: 4,
           borderSkipped: false,
         }
@@ -701,16 +701,16 @@ function generateResultChart(pitchData) {
   async function downloadPDF() {
     const container = document.querySelector('.container');
 
-    // Hide parts you don't want in the PDF
+    // hiding ugly parts on pdf
     const uploadSection = document.querySelector('.file-upload');
     const selectorSection = document.getElementById('pitcherSelector');
     uploadSection.style.display = 'none';
     selectorSection.style.display = 'none';
 
-    // Scroll to top in case anything is out of view
+    // auto scroll to top
     window.scrollTo(0, 0);
 
-    // Allow rendering to update
+    // wait for update render
     await new Promise(resolve => setTimeout(resolve, 200));
 
     html2canvas(container, {
@@ -722,25 +722,25 @@ function generateResultChart(pitchData) {
       const imgData = canvas.toDataURL('image/png');
       const { jsPDF } = window.jspdf;
       
-      // Standard US Letter size in points (72 DPI)
+      // letter size (72 DPI)
       const pageWidth = 612; // 8.5 inches * 72 DPI
       const pageHeight = 792; // 11 inches * 72 DPI
       
-      // Calculate scaling to fit content on page with margins
+      // scaling to fit calc for content on page with margins
       const margin = 36; // 0.5 inch margins
       const availableWidth = pageWidth - (margin * 2);
       const availableHeight = pageHeight - (margin * 2);
       
-      // Calculate scale factor to fit the content
+      // scale factor calc for content fit
       const scaleX = availableWidth / canvas.width;
       const scaleY = availableHeight / canvas.height;
       const scale = Math.min(scaleX, scaleY);
       
-      // Calculate final dimensions
+      // final dimensions calc
       const finalWidth = canvas.width * scale;
       const finalHeight = canvas.height * scale;
       
-      // Center the content on the page
+      // center content on page
       const x = (pageWidth - finalWidth) / 2;
       const y = (pageHeight - finalHeight) / 2;
       
@@ -753,7 +753,7 @@ function generateResultChart(pitchData) {
       pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
       pdf.save(`${selectedPitcher.replace(/\s+/g, '_')}_report.pdf`);
 
-      // Show hidden sections again
+      // show hidden sections again
       uploadSection.style.display = 'block';
       selectorSection.style.display = 'block';
     });
