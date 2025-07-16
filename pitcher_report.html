@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pitcher Performance Analysis - Fixed</title>
 
-  <!--External Libraries-->
+  <!-- External Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -29,7 +29,7 @@
     }
     
     .header {
-      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      background: linear-gradient(90deg, #004085, #007BFF);
       color: white;
       padding: 30px;
       display: flex;
@@ -234,13 +234,19 @@
     </div>
     
     <div id="pitcherSelector" style="display: none; margin: 20px; padding: 20px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <h3>Select Pitcher</h3>
-        <select id="pitcherDropdown" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 300px;">
-            <option value="">Choose a pitcher...</option>
-        </select>
-        <button class="upload-btn" onclick="generateReport()" style="margin-left: 10px;">Generate Report</button>
+    <h3>Select Pitcher & Date</h3>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <select id="pitcherDropdown" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 250px;">
+        <option value="">Choose a pitcher...</option>
+      </select>
+  
+      <select id="dateDropdown" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; width: 200px;">
+        <option value="Season">Season</option>
+      </select>
+  
+      <button class="upload-btn" onclick="generateReport()">Generate Report</button>
     </div>
-    
+  </div> 
     <div id="pitcherChart" style="display: none;">
         <div class="header">
             <div class="pitcher-info">
@@ -250,7 +256,7 @@
                     <p id="pitcherDate">Date Range • AGE: -- • THROWS: --</p>
                 </div>
             </div>
-            <div class="team-logo">TEAM</div>
+            <div class="team-logo">HOOTS</div>
         </div>
         
         <div style="padding: 20px;">
@@ -306,7 +312,8 @@
         <div class="pitch-breakdown">
             <h3>Pitch Type Breakdown</h3>
             <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-              <button class="upload-btn" onclick="downloadPDF()">Download Full Report</button>
+              <button class="upload-btn" onclick="downloadPNG()">Download Full Report</button>
+
             </div>
             <table class="stats-table">
                 <thead>
@@ -333,7 +340,7 @@
   const pitchColors = {
     'FF': '#dc2626',  // FF - Red
     'SL': '#16a34a',  // SL - Green
-    'CH': '#ca8a04',  // CH - Yellow
+    'CH': '#ca8a04',  // CH - Yellow/Gold
     'CU': '#0ea5e9',  // CU - Blue
     'FC': '#7c3aed',  // FC - Purple
     'SI': '#f97316',  // SI - Orange
@@ -386,37 +393,59 @@
   }
 
   document.getElementById('pitcherDropdown').addEventListener('change', function(e) {
-    selectedPitcher = e.target.value;
-    if (reportGenerated) {
-      document.getElementById('pitcherChart').style.display = 'none';
-      reportGenerated = false;
-    }
-  });
+  selectedPitcher = e.target.value;
+  if (reportGenerated) {
+    document.getElementById('pitcherChart').style.display = 'none';
+    reportGenerated = false;
+  }
 
-  function generateReport() {
+  const dateDropdown = document.getElementById('dateDropdown');
+  dateDropdown.innerHTML = '<option value="Season">Season</option>';
+
+  if (selectedPitcher) {
+    const dates = [...new Set(allPitchData
+      .filter(row => row.pitcher === selectedPitcher)
+      .map(row => row.date))].sort();
+    dates.forEach(date => {
+      const opt = document.createElement('option');
+      opt.value = date;
+      opt.textContent = date;
+      dateDropdown.appendChild(opt);
+    });
+  }
+});
+
+function generateReport() {
     if (!selectedPitcher) {
       alert('Please select a pitcher first.');
       return;
     }
 
-    if (reportGenerated) return;
+    const selectedDate = document.getElementById('dateDropdown').value;
 
-    const pitchData = allPitchData.filter(row => row.pitcher === selectedPitcher);
+    let pitchData = allPitchData.filter(row => row.pitcher === selectedPitcher);
+    if (selectedDate !== 'Season') {
+      pitchData = pitchData.filter(row => row.date === selectedDate);
+    }
+
     if (pitchData.length === 0) {
-      alert('No data found for selected pitcher.');
+      alert('No data found for selected pitcher/date.');
       return;
     }
 
-    const pitcherName = pitchData[0].pitcher;
-    const dates = [...new Set(pitchData.map(row => row.date))].sort();
-    const dateRange = dates.length > 1 ? `${dates[0]} - ${dates[dates.length-1]}` : dates[0];
+    document.getElementById('pitcherChart').style.display = 'none';
+    reportGenerated = false;
 
-    // update header
+    const pitcherName = pitchData[0].pitcher;
+    const dateRange = selectedDate === 'Season'
+      ? [...new Set(pitchData.map(row => row.date))].sort().reduce((acc, curr, i, arr) =>
+          arr.length > 1 ? `${arr[0]} - ${arr[arr.length - 1]}` : curr)
+      : selectedDate;
+
     document.getElementById('pitcherName').textContent = pitcherName;
     document.getElementById('pitcherDate').textContent = dateRange;
     document.getElementById('pitcherAvatar').textContent = pitcherName.charAt(0).toUpperCase();
 
-    // calculate overall stats
     const totalPitches = pitchData.length;
     const appearances = new Set(pitchData.map(row => row.date)).size;
     const outs = pitchData.filter(row => row.result === 'Out' || row.result === 'Strikeout').length;
@@ -431,7 +460,7 @@
     const ballResults = ['Ball', 'Walk', 'HBP'];
     const balls = pitchData.filter(row => ballResults.includes(row.result)).length;
     const strikeouts = pitchData.filter(row => row.result === 'Strikeout').length;
-    const bipOuts = pitchData.filter(row => row.result === 'Out').length; // BIP Outs
+    const bipOuts = pitchData.filter(row => row.result === 'Out').length;
     const walkResults = ['Walk', 'HBP'];
     const walks = pitchData.filter(row => walkResults.includes(row.result)).length;
     const foulBalls = pitchData.filter(row => row.result === 'Foul Ball').length;
@@ -443,14 +472,12 @@
     const uniqueRISPBatters = new Set(rispPitches.map(row => row.batter_number));
     const rispHits = rispPitches.filter(row => hitsResults.includes(row.result.trim())).length;
     const rispBA = uniqueRISPBatters.size > 0 ? (rispHits / uniqueRISPBatters.size).toFixed(3) : '0.000';
-    const vsRHB = pitchData.filter(row => row.batter_hand === 'R').length;
-    const vsLHB = pitchData.filter(row => row.batter_hand === 'L').length;
 
     const strikePercentage = ((strikes / totalPitches) * 100).toFixed(1);
     const groundBallPercentage = ballsInPlay.length > 0
      ? (groundBalls / ballsInPlay.length * 100).toFixed(1)
      : '0.0';
-    
+
     document.getElementById('overallStats').innerHTML = `
       <tr>
         <td>${inningsDisplay}</td>
@@ -507,7 +534,6 @@
        ? (groundBalls / ballsInPlay.length * 100).toFixed(1)
        : '0.0';
 
-      // batting Average vs lhb and rhb and hit definitions
       const hitsResults = ['1B', '2B', '3B', 'HR'];
       const rhbPitches = pitchesOfType.filter(row => row.batter_hand === 'R');
       const lhbPitches = pitchesOfType.filter(row => row.batter_hand === 'L');
@@ -518,7 +544,6 @@
       const uniqueRHBatters = new Set(rhbPitches.map(row => row.batter_number));
       const uniqueLHBatters = new Set(lhbPitches.map(row => row.batter_number));
 
-      // calculate ba as hits divided by unique batters count, fallback to zero
       const rhbBA = uniqueRHBatters.size > 0 ? (rhbHits / uniqueRHBatters.size).toFixed(3) : '0.000';
       const lhbBA = uniqueLHBatters.size > 0 ? (lhbHits / uniqueLHBatters.size).toFixed(3) : '0.000';
 
@@ -547,7 +572,6 @@
   }
 
   function generateLocationChart(pitchData) {
-    // reset all cells
     const cells = document.querySelectorAll('.location-cell');
     cells.forEach(cell => {
       cell.textContent = '0';
@@ -618,13 +642,10 @@
 function generateResultChart(pitchData) {
   const ctx = document.getElementById('resultChart').getContext('2d');
 
-  // get unique pitch types  and sort
   const pitchTypes = [...new Set(pitchData.map(row => row.pitch_type))].sort();
 
-  // defining hits results for filtering hits
   const hitsResults = ['1B', '2B', '3B', 'HR'];
 
-  // counts hits and outs per pitch type
   const hitsCounts = pitchTypes.map(pt =>
     pitchData.filter(row => row.pitch_type === pt && hitsResults.includes(row.result)).length
   );
@@ -652,7 +673,7 @@ function generateResultChart(pitchData) {
         {
           label: 'Hits',
           data: hitsCounts,
-          backgroundColor: '#22c55e', 
+          backgroundColor: '#22c55e',
           borderRadius: 4,
           borderSkipped: false,
         }
@@ -698,66 +719,37 @@ function generateResultChart(pitchData) {
 }
 
 
-  async function downloadPDF() {
-    const container = document.querySelector('.container');
+async function downloadPNG() {
+  const container = document.querySelector('.container');
 
-    // hiding ugly parts on pdf
-    const uploadSection = document.querySelector('.file-upload');
-    const selectorSection = document.getElementById('pitcherSelector');
-    uploadSection.style.display = 'none';
-    selectorSection.style.display = 'none';
+  const uploadSection = document.querySelector('.file-upload');
+  const selectorSection = document.getElementById('pitcherSelector');
+  uploadSection.style.display = 'none';
+  selectorSection.style.display = 'none';
 
-    // auto scroll to top
-    window.scrollTo(0, 0);
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-    // wait for update render
-    await new Promise(resolve => setTimeout(resolve, 200));
+  html2canvas(container, {
+    scale: 2,
+    useCORS: true,
+    width: container.offsetWidth,
+    height: container.offsetHeight
+  }).then(canvas => {
+    const imgData = canvas.toDataURL('image/png');
 
-    html2canvas(container, {
-      scale: 1.5,
-      useCORS: true,
-      width: container.offsetWidth,
-      height: container.offsetHeight
-    }).then(canvas => {
-      const imgData = canvas.toDataURL('image/png');
-      const { jsPDF } = window.jspdf;
-      
-      // letter size (72 DPI)
-      const pageWidth = 612; // 8.5 inches * 72 DPI
-      const pageHeight = 792; // 11 inches * 72 DPI
-      
-      // scaling to fit calc for content on page with margins
-      const margin = 36; // 0.5 inch margins
-      const availableWidth = pageWidth - (margin * 2);
-      const availableHeight = pageHeight - (margin * 2);
-      
-      // scale factor calc for content fit
-      const scaleX = availableWidth / canvas.width;
-      const scaleY = availableHeight / canvas.height;
-      const scale = Math.min(scaleX, scaleY);
-      
-      // final dimensions calc
-      const finalWidth = canvas.width * scale;
-      const finalHeight = canvas.height * scale;
-      
-      // center content on page
-      const x = (pageWidth - finalWidth) / 2;
-      const y = (pageHeight - finalHeight) / 2;
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'letter'
-      });
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `${selectedPitcher.replace(/\s+/g, '_')}_report.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-      pdf.save(`${selectedPitcher.replace(/\s+/g, '_')}_report.pdf`);
+    uploadSection.style.display = 'block';
+    selectorSection.style.display = 'block';
+  });
+}
 
-      // show hidden sections again
-      uploadSection.style.display = 'block';
-      selectorSection.style.display = 'block';
-    });
-  }
+
 </script>
 </body>
 </html>
