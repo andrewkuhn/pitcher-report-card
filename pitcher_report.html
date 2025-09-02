@@ -534,6 +534,7 @@ function generateReport() {
        ? (groundBalls / ballsInPlay.length * 100).toFixed(1)
        : '0.0';
 
+      // Batting Average vs RHB and LHB with hits defined
       const hitsResults = ['1B', '2B', '3B', 'HR'];
       const rhbPitches = pitchesOfType.filter(row => row.batter_hand === 'R');
       const lhbPitches = pitchesOfType.filter(row => row.batter_hand === 'L');
@@ -544,6 +545,7 @@ function generateReport() {
       const uniqueRHBatters = new Set(rhbPitches.map(row => row.batter_number));
       const uniqueLHBatters = new Set(lhbPitches.map(row => row.batter_number));
 
+      // Calculate BA as hits divided by unique batters count, with fallback for zero
       const rhbBA = uniqueRHBatters.size > 0 ? (rhbHits / uniqueRHBatters.size).toFixed(3) : '0.000';
       const lhbBA = uniqueLHBatters.size > 0 ? (lhbHits / uniqueLHBatters.size).toFixed(3) : '0.000';
 
@@ -572,6 +574,7 @@ function generateReport() {
   }
 
   function generateLocationChart(pitchData) {
+    // Reset all cells
     const cells = document.querySelectorAll('.location-cell');
     cells.forEach(cell => {
       cell.textContent = '0';
@@ -642,10 +645,13 @@ function generateReport() {
 function generateResultChart(pitchData) {
   const ctx = document.getElementById('resultChart').getContext('2d');
 
+  // Unique pitch types sorted
   const pitchTypes = [...new Set(pitchData.map(row => row.pitch_type))].sort();
 
+  // Define hits results for filtering hits
   const hitsResults = ['1B', '2B', '3B', 'HR'];
 
+  // Count hits and outs per pitch type
   const hitsCounts = pitchTypes.map(pt =>
     pitchData.filter(row => row.pitch_type === pt && hitsResults.includes(row.result)).length
   );
@@ -666,14 +672,14 @@ function generateResultChart(pitchData) {
         {
           label: 'Outs',
           data: outsCounts,
-          backgroundColor: '#64748b',
+          backgroundColor: '#64748b', // gray-blue
           borderRadius: 4,
           borderSkipped: false,
         },
         {
           label: 'Hits',
           data: hitsCounts,
-          backgroundColor: '#22c55e',
+          backgroundColor: '#22c55e', // green
           borderRadius: 4,
           borderSkipped: false,
         }
@@ -722,11 +728,13 @@ function generateResultChart(pitchData) {
 async function downloadPNG() {
   const container = document.querySelector('.container');
 
+  // Hide parts you don't want in the image
   const uploadSection = document.querySelector('.file-upload');
   const selectorSection = document.getElementById('pitcherSelector');
   uploadSection.style.display = 'none';
   selectorSection.style.display = 'none';
 
+  // Allow rendering to update
   await new Promise(resolve => setTimeout(resolve, 200));
 
   html2canvas(container, {
@@ -744,6 +752,7 @@ async function downloadPNG() {
     link.click();
     document.body.removeChild(link);
 
+    // Show hidden sections again
     uploadSection.style.display = 'block';
     selectorSection.style.display = 'block';
   });
